@@ -263,10 +263,11 @@ router.get('/tarea/:tarea_id/entregas', async (req, res) => {
     );
 
     res.json({ success: true, entregas: result.rows });
-  } catch (error) {
-    console.error('Error al obtener entregas de tarea:', error);
-    res.status(500).json({ success: false, error: 'Error interno del servidor' });
-  }
+  }catch (error) {
+  console.error('Error al obtener entregas de tarea:', error.message);
+  console.error(error.stack);
+  res.status(500).json({ success: false, error: 'Error interno del servidor' });
+}
 });
 
 module.exports = router;
