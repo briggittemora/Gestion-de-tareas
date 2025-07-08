@@ -60,11 +60,14 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// 🔐 LOGIN
+// 🔐 LOGIN (con logs detallados)
 router.post('/login', async (req, res) => {
   const { correo, contrasena } = req.body;
 
+  console.log('📩 Intentando login con:', correo, contrasena);
+
   if (!correo || !contrasena) {
+    console.log('⚠️ Faltan campos');
     return res.status(400).json({ success: false, mensaje: '⚠️ Correo y contraseña son obligatorios.' });
   }
 
@@ -77,13 +80,21 @@ router.post('/login', async (req, res) => {
     const usuario = rows[0];
 
     if (!usuario) {
+      console.log('🚫 Usuario no encontrado en la base de datos');
       return res.status(401).json({ success: false, mensaje: '❌ Correo no registrado.' });
     }
 
+    console.log('🔍 Usuario encontrado:', usuario.email);
+    console.log('🔐 Comparando contraseñas...');
+
     const contrasenaValida = await bcrypt.compare(contrasena, usuario.password);
+    
     if (!contrasenaValida) {
+      console.log('🚫 Contraseña incorrecta');
       return res.status(401).json({ success: false, mensaje: '❌ Contraseña incorrecta.' });
     }
+
+    console.log('✅ Contraseña válida, generando token...');
 
     const token = jwt.sign(
       {
@@ -95,6 +106,8 @@ router.post('/login', async (req, res) => {
       JWT_SECRET,
       { expiresIn: '2h' }
     );
+
+    console.log('✅ Token generado correctamente');
 
     res.json({
       success: true,
