@@ -6,8 +6,11 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'claveSuperSecreta123';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL_LOCAL
+  connectionString: isProduction ? process.env.DATABASE_URL : process.env.DATABASE_URL_LOCAL,
+  ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 
 function validarEmail(email) {
