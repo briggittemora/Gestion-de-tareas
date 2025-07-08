@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/static/css/main.98cf1dc4.css",
+    "main.js": "/static/js/main.2bb7f7a6.js",
+    "static/js/453.8ab44547.chunk.js": "/static/js/453.8ab44547.chunk.js",
+    "static/media/LogoUGcolor.png": "/static/media/LogoUGcolor.b9ccddf2a8bca79eae34.png",
+    "index.html": "/index.html",
+    "main.98cf1dc4.css.map": "/static/css/main.98cf1dc4.css.map",
+    "main.2bb7f7a6.js.map": "/static/js/main.2bb7f7a6.js.map",
+    "453.8ab44547.chunk.js.map": "/static/js/453.8ab44547.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.98cf1dc4.css",
+    "static/js/main.2bb7f7a6.js"
+  ]
+}
