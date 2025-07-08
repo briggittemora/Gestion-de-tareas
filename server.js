@@ -12,15 +12,15 @@ app.use(express.json());
 // CORS para desarrollo y producción
 const allowedOrigins = [
   'http://localhost:3000',
-    'http://localhost:5000',        // si usas otro puerto de React
-  'http://127.0.0.1:3000',  
-  'https://systeclinx-frontend.onrender.com',
+  'http://localhost:5000',
+  'http://127.0.0.1:3000',
+  'https://gestion-de-tareas-n7kw.onrender.com',
 ];
 
 app.use(cors({
   origin: (origin, callback) => {
-   
-    if (!origin || origin.startsWith('http://localhost') || origin.startsWith('http://192.168.0.')) {
+    // Permitir requests sin origen (como Postman) o si el origen está en allowedOrigins
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('No permitido por CORS'));
@@ -28,7 +28,6 @@ app.use(cors({
   },
   credentials: true,
 }));
-
 // Rutas
 const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
