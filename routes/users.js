@@ -10,7 +10,10 @@ const pool = new Pool({
   connectionString:
     process.env.NODE_ENV === 'production'
       ? process.env.DATABASE_URL
-      : process.env.DATABASE_URL_LOCAL
+      : process.env.DATABASE_URL_LOCAL,
+  ssl: process.env.NODE_ENV === 'production'
+    ? { rejectUnauthorized: false } // Para evitar error con certificado autofirmado de Render
+    : false,
 });
 
 // 🔐 Middleware para verificar token y extraer info del usuario
