@@ -4,7 +4,11 @@ const router = express.Router();
 const { Pool } = require('pg');
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL_LOCAL
+  connectionString:
+    process.env.NODE_ENV === 'production'
+      ? process.env.DATABASE_URL
+      : process.env.DATABASE_URL_LOCAL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 // GET /api/dashboard/maestro?userId=123
@@ -25,7 +29,6 @@ router.get('/', async (req, res) => {
       [userId]
     );
 
-    // Cambié aquí para evitar error
     const resultProyectos = await pool.query(
       `SELECT COUNT(*) FROM proyectos WHERE activo = true`
     );

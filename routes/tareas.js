@@ -3,7 +3,11 @@ const router = express.Router();
 const { Pool } = require('pg');
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL_LOCAL,
+  connectionString:
+    process.env.NODE_ENV === 'production'
+      ? process.env.DATABASE_URL
+      : process.env.DATABASE_URL_LOCAL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 // Crear tarea
@@ -102,6 +106,7 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
+
 // Eliminar tarea por id
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
@@ -116,6 +121,7 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ success: false, error: 'Error interno del servidor' });
   }
 });
+
 // Actualizar tarea (editar y actualizar completado/progreso y asignacion_general)
 router.put('/:id', async (req, res) => {
   const { id } = req.params;

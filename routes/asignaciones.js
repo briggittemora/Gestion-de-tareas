@@ -5,6 +5,14 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+const pool = new Pool({
+  connectionString:
+    process.env.NODE_ENV === 'production'
+      ? process.env.DATABASE_URL
+      : process.env.DATABASE_URL_LOCAL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
+
 // Configurar subida de archivos con multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -19,10 +27,6 @@ const storage = multer.diskStorage({
   }
 });
 const upload = multer({ storage });
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL_LOCAL,
-});
 
 // Asignar tarea a usuario
 router.post('/', async (req, res) => {
@@ -135,12 +139,11 @@ router.post('/:id/entrega', upload.single('archivo'), async (req, res) => {
   }
 });
 
-// NUEVA RUTA para descargar archivo entregado
+// Descargar archivo entregado
 router.get('/:id/descargar', async (req, res) => {
   const { id } = req.params;
 
   try {
-    // Buscar la asignación para obtener el nombre del archivo
     const result = await pool.query(
       `SELECT archivo_entregado FROM tareas_usuarios WHERE id = $1`,
       [id]
@@ -157,12 +160,10 @@ router.get('/:id/descargar', async (req, res) => {
 
     const filePath = path.join(__dirname, '..', 'uploads', 'entregas', archivoNombre);
 
-    // Verificar que el archivo existe
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ success: false, message: 'Archivo no encontrado en el servidor' });
     }
 
-    // Descargar el archivo con el nombre original
     res.download(filePath, archivoNombre, (err) => {
       if (err) {
         console.error('Error enviando archivo:', err);
@@ -198,12 +199,12 @@ router.put('/:id', async (req, res) => {
     res.status(500).json({ success: false, error: 'Error interno del servidor' });
   }
 });
+
 // Obtener asignación por tarea y usuario (crea si es general)
 router.get('/detalle/:tarea_id/:usuario_id', async (req, res) => {
   const { tarea_id, usuario_id } = req.params;
 
   try {
-    // Ver si ya tiene una asignación
     const existente = await pool.query(
       `SELECT tu.*, t.titulo, t.descripcion, t.tipo, t.enlace_video, t.fecha_limite, t.instrucciones
        FROM tareas_usuarios tu
@@ -216,7 +217,6 @@ router.get('/detalle/:tarea_id/:usuario_id', async (req, res) => {
       return res.json({ success: true, asignacion: existente.rows[0] });
     }
 
-    // Verificar si la tarea es general
     const tareaGeneral = await pool.query(
       `SELECT * FROM tareas WHERE id = $1 AND asignacion_general = true`,
       [tarea_id]
@@ -226,7 +226,6 @@ router.get('/detalle/:tarea_id/:usuario_id', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Asignación no encontrada' });
     }
 
-    // Crear asignación automáticamente
     const nuevaAsignacion = await pool.query(
       `INSERT INTO tareas_usuarios (tarea_id, usuario_id, estado, progreso, completado)
        VALUES ($1, $2, 'pendiente', 0, false)
@@ -234,7 +233,6 @@ router.get('/detalle/:tarea_id/:usuario_id', async (req, res) => {
       [tarea_id, usuario_id]
     );
 
-    // Traer datos combinados de tarea y asignación
     const full = await pool.query(
       `SELECT tu.*, t.titulo, t.descripcion, t.tipo, t.enlace_video, t.fecha_limite, t.instrucciones
        FROM tareas_usuarios tu
@@ -250,7 +248,7 @@ router.get('/detalle/:tarea_id/:usuario_id', async (req, res) => {
   }
 });
 
-// Obtener entregas (tareas_usuarios) para una tarea, con info de usuario
+// Obtener entregas para una tarea con info de usuario
 router.get('/tarea/:tarea_id/entregas', async (req, res) => {
   const { tarea_id } = req.params;
   try {
@@ -270,6 +268,5 @@ router.get('/tarea/:tarea_id/entregas', async (req, res) => {
     res.status(500).json({ success: false, error: 'Error interno del servidor' });
   }
 });
-
 
 module.exports = router;

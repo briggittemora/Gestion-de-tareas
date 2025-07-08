@@ -2,9 +2,12 @@ const express = require('express');
 const router = express.Router();
 const { Pool } = require('pg');
 
-// Configura la conexión a PostgreSQL
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL_LOCAL,
+  connectionString:
+    process.env.NODE_ENV === 'production'
+      ? process.env.DATABASE_URL
+      : process.env.DATABASE_URL_LOCAL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 // Ruta para obtener datos del dashboard
@@ -19,9 +22,9 @@ router.get('/', async (req, res) => {
     const resultAlertas = await pool.query(alertasQuery);
 
     res.json({
-      usuariosRegistrados: parseInt(resultUsuarios.rows[0].count),
-      proyectosActivos: parseInt(resultProyectos.rows[0].count),
-      alertasSistema: parseInt(resultAlertas.rows[0].count),
+      usuariosRegistrados: parseInt(resultUsuarios.rows[0].count, 10),
+      proyectosActivos: parseInt(resultProyectos.rows[0].count, 10),
+      alertasSistema: parseInt(resultAlertas.rows[0].count, 10),
     });
   } catch (error) {
     console.error('Error al obtener datos del dashboard:', error);

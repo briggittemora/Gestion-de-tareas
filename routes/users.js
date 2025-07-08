@@ -1,16 +1,19 @@
-// routes/users.js
 const express = require('express');
 const router = express.Router();
 const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL_LOCAL
-});
-
 const JWT_SECRET = process.env.JWT_SECRET || 'claveSuperSecreta123';
 
-// Middleware para verificar token y extraer info del usuario
+// ✅ CORREGIDO: conexión según entorno
+const pool = new Pool({
+  connectionString:
+    process.env.NODE_ENV === 'production'
+      ? process.env.DATABASE_URL
+      : process.env.DATABASE_URL_LOCAL
+});
+
+// 🔐 Middleware para verificar token y extraer info del usuario
 function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ success: false, mensaje: 'Token requerido' });
@@ -27,7 +30,7 @@ function authMiddleware(req, res, next) {
   }
 }
 
-// GET /api/users?rol=miembro&search=ana
+// ✅ GET /api/users?rol=miembro&search=ana
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const rolesPermitidos = ['admin', 'maestro'];
@@ -41,13 +44,11 @@ router.get('/', authMiddleware, async (req, res) => {
     let conditions = [];
     let values = [];
 
-    // Si se especifica un rol y no es "Todos", se filtra
     if (rol && rol !== 'Todos') {
       values.push(rol);
       conditions.push(`rol = $${values.length}`);
     }
 
-    // Si se incluye término de búsqueda
     if (search) {
       const searchTerm = `%${search.toLowerCase()}%`;
       values.push(searchTerm);
@@ -55,7 +56,6 @@ router.get('/', authMiddleware, async (req, res) => {
       conditions.push(`(LOWER(nombre) LIKE $${idx} OR LOWER(apellido) LIKE $${idx} OR LOWER(email) LIKE $${idx})`);
     }
 
-    // Si hay condiciones, se agregan al query
     if (conditions.length > 0) {
       query += ' WHERE ' + conditions.join(' AND ');
     }
@@ -71,12 +71,12 @@ router.get('/', authMiddleware, async (req, res) => {
 
     res.json({ success: true, usuarios });
   } catch (error) {
-    console.error('Error al obtener usuarios:', error);
-    res.status(500).json({ success: false, mensaje: 'Error en el servidor' });
+    console.error('❌ Error al obtener usuarios:', error);
+    res.status(500).json({ success: false, mensaje: '❌ Error en el servidor' });
   }
 });
 
-// DELETE /api/users/:id
+// ✅ DELETE /api/users/:id
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
 
@@ -87,10 +87,11 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ success: false, mensaje: 'Usuario no encontrado' });
     }
 
-    res.json({ success: true, mensaje: 'Usuario eliminado correctamente' });
+    res.json({ success: true, mensaje: '✅ Usuario eliminado correctamente' });
   } catch (error) {
-    console.error('Error al eliminar usuario:', error);
-    res.status(500).json({ success: false, mensaje: 'Error del servidor' });
+    console.error('❌ Error al eliminar usuario:', error);
+    res.status(500).json({ success: false, mensaje: '❌ Error del servidor' });
   }
 });
+
 module.exports = router;
