@@ -35,8 +35,7 @@ app.use(
 app.use(async (req, res, next) => {
   try {
     const result = await pool.query('SELECT modo_mantenimiento FROM configuracion_sistema LIMIT 1');
-    if (result.rows.length > 0 && result.rows[0].modo_mantenimiento) {
-      // Permitir acceso a rutas esenciales para admins o mantenimiento
+    if (result && result.rows && result.rows.length > 0 && result.rows[0].modo_mantenimiento) {
       if (
         req.path.startsWith('/api/configuracion') ||
         req.path.startsWith('/api/auth') ||
@@ -49,7 +48,7 @@ app.use(async (req, res, next) => {
     next();
   } catch (error) {
     console.error('❌ Error middleware modo mantenimiento:', error);
-    next(); // No bloquear si hay error consultando la configuración
+    next();
   }
 });
 
