@@ -2,8 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
-
-const pool = require('./db/pgpool'); // Ajusta esta ruta según donde tengas el pool configurado
+const pool = require('./config/db'); // Ajusta esta ruta según donde tengas el pool configurado
 
 const app = express();
 
