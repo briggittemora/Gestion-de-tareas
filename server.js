@@ -19,7 +19,6 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Permitir requests sin origen (como Postman) o si el origen está en allowedOrigins
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -28,19 +27,20 @@ app.use(cors({
   },
   credentials: true,
 }));
+
 // Rutas
 const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
 const dashboardRoutes = require('./routes/dashboard');
-const configuracionRoutes = require('./routes/configuracion');
 const dashboardMaestroRoutes = require('./routes/dashboardMaestro');
 const tareasRoutes = require('./routes/tareas');
 const asignacionesRouter = require('./routes/asignaciones');
-// Cambié aquí para que dashboardMaestroRoutes se monte en /api/dashboard
+const configuracionRoutes = require('./routes/configuracionController'); // ✅ Solo esta
+
 app.use('/api/asignaciones', asignacionesRouter);
 app.use('/api/tareas', tareasRoutes); 
 app.use('/api/dashboard/maestro', dashboardMaestroRoutes);
-app.use('/api/configuracion', configuracionRoutes);
+app.use('/api/configuracion', configuracionRoutes); // ✅ Aquí se usa
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/dashboard', dashboardRoutes);
