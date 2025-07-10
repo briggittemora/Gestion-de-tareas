@@ -1,7 +1,8 @@
-
+// authController.js
 const { Op } = require('sequelize');
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
+const pool = require('../db/pgpool'); // Ajusta esta ruta si tu pool está en otro archivo
 
 // Función para validar email
 function validarEmail(email) {
@@ -17,6 +18,12 @@ function validarPassword(password) {
 exports.registerUser = async (req, res) => {
   try {
     console.log('🟡 Datos recibidos en el registro:', req.body);
+
+    // Validar si los registros están permitidos
+    const configResult = await pool.query('SELECT permitir_registros FROM configuracion_sistema LIMIT 1');
+    if (configResult.rows.length > 0 && !configResult.rows[0].permitir_registros) {
+      return res.status(403).json({ success: false, mensaje: '🚫 Registro deshabilitado temporalmente.' });
+    }
 
     // Aquí adaptamos a lo que envía tu frontend
     const { nombre, apellido, cedula, correo, contrasena } = req.body;
@@ -55,7 +62,7 @@ exports.registerUser = async (req, res) => {
       cedula,
       email: correo,
       password: hashedPassword,
-      rol: 'miembro'   // <--- Aquí está la asignación del rol predeterminado
+      rol: 'miembro'
     });
 
     return res.status(201).json({ success: true, mensaje: '✅ Usuario registrado correctamente.' });

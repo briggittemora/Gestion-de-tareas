@@ -3,9 +3,11 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
+const pool = require('./db/pgpool'); // Ajusta esta ruta según donde tengas el pool configurado
+
 const app = express();
 
-// Middleware
+// Middleware para parsear body
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -17,16 +19,40 @@ const allowedOrigins = [
   'https://gestion-de-tareas-n7kw.onrender.com',
 ];
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('No permitido por CORS'));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('No permitido por CORS'));
+      }
+    },
+    credentials: true,
+  })
+);
+
+// Middleware para bloquear acceso en modo mantenimiento
+app.use(async (req, res, next) => {
+  try {
+    const result = await pool.query('SELECT modo_mantenimiento FROM configuracion_sistema LIMIT 1');
+    if (result.rows.length > 0 && result.rows[0].modo_mantenimiento) {
+      // Permitir acceso a rutas esenciales para admins o mantenimiento
+      if (
+        req.path.startsWith('/api/configuracion') ||
+        req.path.startsWith('/api/auth') ||
+        req.path.startsWith('/uploads')
+      ) {
+        return next();
+      }
+      return res.status(503).json({ success: false, mensaje: '🚧 Modo mantenimiento activo. Intenta más tarde.' });
     }
-  },
-  credentials: true,
-}));
+    next();
+  } catch (error) {
+    console.error('❌ Error middleware modo mantenimiento:', error);
+    next(); // No bloquear si hay error consultando la configuración
+  }
+});
 
 // Rutas
 const authRoutes = require('./routes/auth');
@@ -38,7 +64,7 @@ const asignacionesRouter = require('./routes/asignaciones');
 const configuracionRoutes = require('./routes/configuracionController'); // ✅ Solo esta
 
 app.use('/api/asignaciones', asignacionesRouter);
-app.use('/api/tareas', tareasRoutes); 
+app.use('/api/tareas', tareasRoutes);
 app.use('/api/dashboard/maestro', dashboardMaestroRoutes);
 app.use('/api/configuracion', configuracionRoutes); // ✅ Aquí se usa
 app.use('/api/auth', authRoutes);
