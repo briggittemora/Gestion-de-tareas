@@ -80,10 +80,36 @@ router.get('/', authMiddleware, async (req, res) => {
 });
 
 // ✅ DELETE /api/users/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   const { id } = req.params;
 
+  // Verificar que el usuario sea admin
+  if (req.user.rol !== 'admin') {
+    return res.status(403).json({ success: false, mensaje: 'Solo los administradores pueden eliminar usuarios' });
+  }
+
   try {
+    // Verificar si tiene asignaciones en tareas_usuarios que no estén completadas
+    const asignacionesPendientes = await pool.query(
+      `SELECT tu.id, t.titulo, t.asignacion_general
+       FROM tareas_usuarios tu
+       JOIN tareas t ON tu.tarea_id = t.id
+       WHERE tu.usuario_id = $1 
+         AND tu.completado = false`,
+      [id]
+    );
+
+    // Si tiene asignaciones pendientes, no permitir eliminación
+    if (asignacionesPendientes.rows.length > 0) {
+      const tareasPendientes = asignacionesPendientes.rows.map(t => t.titulo);
+      const tareasInfo = tareasPendientes.join(', ');
+      return res.status(400).json({ 
+        success: false, 
+        mensaje: `No se puede eliminar el usuario porque tiene ${asignacionesPendientes.rows.length} tarea(s) pendiente(s): ${tareasInfo}. Complete las tareas antes de eliminar el usuario.` 
+      });
+    }
+
+    // Si no tiene tareas pendientes, proceder con la eliminación
     const result = await pool.query('DELETE FROM users WHERE id = $1', [id]);
 
     if (result.rowCount === 0) {
